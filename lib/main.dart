@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gif_view/gif_view.dart';
+import 'dart:async'; // Required for the Timer class
+import 'screens/todo_screen.dart'; // Import TodoScreen
 
 void main() {
   runApp(const MyApp());
@@ -15,98 +17,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomeScreen(),  // Changed this line
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      home: const HomeScreen(), // HomeScreen is set as the starting page
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -120,21 +38,170 @@ class _HomeScreenState extends State<HomeScreen> {
           // GIF Background
           Positioned.fill(
             child: GifView.asset(
-              'assets/pika.gif',
+              'assets/pika.gif', // Path to your GIF file
               fit: BoxFit.cover,
-              frameRate: 30, // Add this to control frame rate
-          onError: (error) {
-  print('Error loading GIF: $error');
-  return Center(child: CircularProgressIndicator());
-},
-
+              frameRate: 30,
             ),
           ),
-          // Your other widgets go here
+          // Centered Content
           Center(
-            child: Container(
-              color: Colors.transparent, // Make sure container is transparent
-              child: Text('Your content here'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PomodoroScreen()),
+                    );
+                  },
+                  child: const Text('Open Pomodoro Timer'),
+                ),
+                const SizedBox(height: 20), // Add spacing between buttons
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TodoScreen()),
+                    );
+                  },
+                  child: const Text('Open Todo List'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PomodoroScreen extends StatefulWidget {
+  const PomodoroScreen({super.key});
+
+  @override
+  _PomodoroScreenState createState() => _PomodoroScreenState();
+}
+
+class _PomodoroScreenState extends State<PomodoroScreen> {
+  int minutes = 25; // Default Pomodoro time
+  int seconds = 0;
+  bool isRunning = false;
+  Timer? timer;
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  void startTimer() {
+    if (!isRunning) {
+      timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        setState(() {
+          if (seconds > 0) {
+            seconds--;
+          } else if (minutes > 0) {
+            minutes--;
+            seconds = 59;
+          } else {
+            timer.cancel();
+            isRunning = false;
+          }
+        });
+      });
+      setState(() {
+        isRunning = true;
+      });
+    }
+  }
+
+  void pauseTimer() {
+    timer?.cancel();
+    setState(() {
+      isRunning = false;
+    });
+  }
+
+  void setTimer(int mins) {
+    timer?.cancel();
+    setState(() {
+      minutes = mins;
+      seconds = 0;
+      isRunning = false;
+    });
+  }
+
+  Widget _buildTimeButton(int minutes, String label) {
+    return ElevatedButton(
+      onPressed: () {
+        setTimer(minutes);
+      },
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 18),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Column(
+        children: [
+          // Timer Display
+          Expanded(
+            flex: 3,
+            child: GestureDetector(
+              onTap: isRunning ? pauseTimer : startTimer,
+              child: Center(
+                child: Text(
+                  '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontSize: 120,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.white,
+                    letterSpacing: 20,
+                    fontFamily: 'VT323',
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // Timer Controls
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Timer Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildTimeButton(25, 'Pomodoro'),
+                    _buildTimeButton(5, 'Short Break'),
+                    _buildTimeButton(15, 'Long Break'),
+                  ],
+                ),
+                const SizedBox(height: 20), // Add spacing
+                // Go Back Button
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Return to HomeScreen
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                  ),
+                  child: const Text(
+                    'Go Back',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

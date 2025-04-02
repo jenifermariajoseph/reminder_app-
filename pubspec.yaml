@@ -54,6 +54,11 @@ dev_dependencies:
 flutter:
   assets:
     - assets/pika.gif
+    - assets/todo_background.jpg  # Add this line for the todo background image
+  fonts:
+    - family: VT323
+      fonts:
+        - asset: fonts/VT323-Regular.ttf
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
