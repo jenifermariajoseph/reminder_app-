@@ -54,7 +54,14 @@ dev_dependencies:
 flutter:
   assets:
     - assets/pika.gif
-    - assets/todo_background.jpg  # Add this line for the todo background image
+    - assets/lazy.png
+    - assets/todo_background.jpg
+    - assets/PUG.png
+    - assets/profile.png
+    - assets/badge1.png
+    - assets/badge2.png
+    - assets/badge3.png
+    - assets/badge4.png
   fonts:
     - family: VT323
       fonts:
