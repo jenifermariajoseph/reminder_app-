@@ -3,16 +3,26 @@ import 'package:gif_view/gif_view.dart';
 import 'dart:async';
 import 'screens/todo_screen.dart';
 import 'screens/profile_screen.dart';
-
-
-
+import 'package:shared_preferences/shared_preferences.dart'; // Fixed import
 
 // XP Points Tracking
 class UserData {
   static int xpPoints = 0; // XP points tracking
+
+  static Future<void> loadXP() async {
+    final prefs = await SharedPreferences.getInstance();
+    xpPoints = prefs.getInt('xpPoints') ?? 0;
+  }
+
+  static Future<void> saveXP() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('xpPoints', xpPoints);
+  }
 }
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await UserData.loadXP();
   runApp(const MyApp());
 }
 
@@ -62,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final unlockedBadges = getUnlockedBadges();
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -106,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Existing buttons
                         ElevatedButton(
                           onPressed: () {
                             Navigator.push(
@@ -126,54 +135,54 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           child: const Text('Open Todo List'),
                         ),
-                        
                         // Add Badge Display
                         const SizedBox(height: 40),
-                        if (unlockedBadges.isNotEmpty) Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.7),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'UNLOCKED BADGES',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontFamily: 'VT323',
-                                  letterSpacing: 2,
+                        if (unlockedBadges.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'UNLOCKED BADGES',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontFamily: 'VT323',
+                                    letterSpacing: 2,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                spacing: 10,
-                                runSpacing: 10,
-                                children: unlockedBadges.map((badge) {
-                                  return Column(
-                                    children: [
-                                      Image.asset(
-                                        badge.imagePath,
-                                        height: 40,
-                                        width: 40,
-                                      ),
-                                      const SizedBox(height: 5),
-                                      Text(
-                                        badge.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontFamily: 'VT323',
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: unlockedBadges.map((badge) {
+                                    return Column(
+                                      children: [
+                                        Image.asset(
+                                          badge.imagePath,
+                                          height: 40,
+                                          width: 40,
                                         ),
-                                      ),
-                                    ],
-                                  );
-                                }).toList(),
-                              ),
-                            ],
+                                        const SizedBox(height: 5),
+                                        Text(
+                                          badge.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontFamily: 'VT323',
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -254,8 +263,9 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     });
   }
 
-  void _showCompletionDialog() {
-    UserData.xpPoints += 25; // Add XP points
+  void _showCompletionDialog() async {
+    UserData.xpPoints += 25;
+    await UserData.saveXP(); // Save XP points when earned
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -321,95 +331,116 @@ class _PomodoroScreenState extends State<PomodoroScreen> {
     );
   }
 
-  Widget _buildTimeButton(int minutes, String label) {
-    return ElevatedButton(
-      onPressed: () {
-        setTimer(minutes);
-      },
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(fontSize: 18),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        children: [
-          Expanded(
-            flex: 3,
-            child: GestureDetector(
-              onTap: isRunning ? pauseTimer : startTimer,
-              child: Center(
-                child: Text(
-                  '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-                  style: const TextStyle(
-                    fontSize: 120,
-                    fontWeight: FontWeight.w300,
-                    color: Colors.white,
-                    letterSpacing: 20,
-                    fontFamily: 'VT323',
+      body: SafeArea(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children:           [
+            // Timer Display
+            Expanded(
+              flex: 2,
+              child: GestureDetector(
+                onTap: isRunning ? pauseTimer : startTimer,
+                child: Center(
+                  child: Text(
+                    '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+                    style: const TextStyle(
+                      fontSize: 100, // Slightly smaller
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white,
+                      letterSpacing: 15, // Adjusted spacing
+                      fontFamily: 'VT323',
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
+            // Timer Controls
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildTimeButton(25, 'Pomodoro'),
-                    _buildTimeButton(5, 'Short Break'),
-                    _buildTimeButton(15, 'Long Break'),
+                    // Timer Preset Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildTimeButton(25, 'Pomodoro'),
+                        _buildTimeButton(5, 'Short'),
+                        _buildTimeButton(15, 'Long'),
+                      ],
+                    ),
+                    // Start/Pause Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: startTimer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                          ),
+                          child: const Text('Start'),
+                        ),
+                        const SizedBox(width: 15),
+                        ElevatedButton(
+                          onPressed: pauseTimer,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                          ),
+                          child: const Text('Pause'),
+                        ),
+                      ],
+                    ),
+                    // Complete and Back Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: completeNow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                          ),
+                          child: const Text('Complete'),
+                        ),
+                        const SizedBox(width: 15),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                          ),
+                          child: const Text('Back'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: completeNow,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  ),
-                  child: const Text(
-                    'Complete Now',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'VT323',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  ),
-                  child: const Text(
-                    'Go Back',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontFamily: 'VT323',
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeButton(int minutes, String label) {
+    return ElevatedButton(
+      onPressed: () => setTimer(minutes),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 14),
       ),
     );
   }
 }
-
